@@ -23,5 +23,9 @@
   "bugs": {
     "url": "https://github.com/gabrielelana/levelWHEN/issues"
   },
-  "homepage": "https://github.com/gabrielelana/levelWHEN"
+  "homepage": "https://github.com/gabrielelana/levelWHEN",
+  "dependencies": {
+    "levelup": "^0.18.2",
+    "leveldown": "^0.10.2"
+  }
 }
