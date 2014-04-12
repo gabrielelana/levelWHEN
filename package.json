@@ -1,0 +1,27 @@
+{
+  "name": "levelWHEN",
+  "version": "0.0.0",
+  "description": "Like EventStore but better",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gabrielelana/levelWHEN.git"
+  },
+  "keywords": [
+    "event",
+    "store",
+    "levelDB",
+    "levelUP",
+    "levelDOWN",
+    "CQRS"
+  ],
+  "author": "Gabriele Lana <gabriele.lana@gmail.com> (http://github.com/gabrielelana)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gabrielelana/levelWHEN/issues"
+  },
+  "homepage": "https://github.com/gabrielelana/levelWHEN"
+}
