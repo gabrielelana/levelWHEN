@@ -26,6 +26,9 @@
   "homepage": "https://github.com/gabrielelana/levelWHEN",
   "dependencies": {
     "levelup": "^0.18.2",
-    "leveldown": "^0.10.2"
+    "leveldown": "^0.10.2",
+    "monotonic-timestamp": "0.0.8",
+    "async": "^0.7.0",
+    "lodash": "^2.4.1"
   }
 }
