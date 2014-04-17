@@ -1,5 +1,6 @@
 var levelup = require('levelup'),
     MongoClient = require('mongodb').MongoClient,
+    ts = require('monotonic-timestamp'),
     rimraf = require('rimraf')
 
 rimraf('.db/subscriptions', function(err) {
@@ -17,12 +18,12 @@ rimraf('.db/subscriptions', function(err) {
 
         fixtures.collection('subscriptions').find({}).each(function(err, doc) {
           if (doc) {
-            var uid = doc['_id'],
+            var id = doc['_id'],
                 name = doc['type'],
-                at = doc['created_at'].getTime()
+                at = ts()
 
-            events.put([at, uid].join('-'), {
-              'uid': uid,
+            var value = {
+              'id': id,
               'name': name,
               'at': at,
               'data': {
@@ -34,7 +35,13 @@ rimraf('.db/subscriptions', function(err) {
                 'msisdn': doc['subscriber_id'],
                 'created_at': doc['created_at'],
               }
-            })
+            }
+
+            events.batch([
+              {type: 'put', key: ['id', id].join('-'), value: value},
+              {type: 'put', key: ['ts', at].join('-'), value: id},
+              {type: 'put', key: ['ev', at, name].join('-'), value: id},
+            ])
           } else {
             fixtures.close()
           }
