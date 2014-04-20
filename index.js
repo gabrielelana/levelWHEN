@@ -1,7 +1,6 @@
 var levelup = require('levelup'),
     ts = require('monotonic-timestamp'),
     async = require('async'),
-    rimraf = require('rimraf'),
     _ = require('lodash')
 
 var EventStream = (function(EventStream) {
@@ -100,15 +99,7 @@ var EventStream = (function(EventStream) {
 
 })({})
 
-rimraf('.db/count_events_per_subscription', function(err) {
-  new EventStream('.db/count_events_per_subscription')
-    .pullFrom('.db/subscriptions')
-    .indexWith('subscription_id')
-    .startWith({count: 0})
-    .when({
-      '$any': function(s, e) {
-        return {count: s.count + 1}
-      }
-    })
-    .run()
-})
+
+module.exports = function(dbPath) {
+  return new EventStream(dbPath)
+}
