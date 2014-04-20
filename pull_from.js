@@ -34,9 +34,16 @@ var EventStream = (function(EventStream) {
   }
 
   EventStream.prototype.pullFrom = function(sourcePath) {
-    var aggregator = this.aggregator
+    this.sourcePath = sourcePath
+    return this
+  }
 
-    open(this.dbPath, function(err, db) {
+  EventStream.prototype.run = function() {
+    var aggregator = this.aggregator,
+        sourcePath = this.sourcePath,
+        dbPath = this.dbPath
+
+    open(dbPath, function(err, db) {
       open(sourcePath, function(err, source) {
         var startingAt = 'ts-0',
             endingAt = 'ts~'
@@ -95,6 +102,7 @@ var EventStream = (function(EventStream) {
 
 rimraf('.db/count_events_per_subscription', function(err) {
   new EventStream('.db/count_events_per_subscription')
+    .pullFrom('.db/subscriptions')
     .indexWith('subscription_id')
     .startWith({count: 0})
     .when({
@@ -102,5 +110,5 @@ rimraf('.db/count_events_per_subscription', function(err) {
         return {count: s.count + 1}
       }
     })
-    .pullFrom('.db/subscriptions')
+    .run()
 })
