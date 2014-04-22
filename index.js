@@ -3,16 +3,16 @@ var levelup = require('levelup'),
     async = require('async'),
     _ = require('lodash')
 
-var EventStream = (function(EventStream) {
+var LevelWHEN = (function(LevelWHEN) {
 
-  EventStream = function(dbPath) {
+  LevelWHEN = function(dbPath) {
     this.dbPath = dbPath
     this.aggregator = {
       partialStatusOfAllAggregates: {}
     }
   }
 
-  EventStream.prototype.indexWith = function(keyOrExtractor) {
+  LevelWHEN.prototype.indexWith = function(keyOrExtractor) {
     if (_.isFunction(keyOrExtractor)) {
       this.aggregator.indexWith = keyOrExtractor
     }
@@ -22,22 +22,22 @@ var EventStream = (function(EventStream) {
     return this
   }
 
-  EventStream.prototype.startWith = function(initialStatus) {
+  LevelWHEN.prototype.startWith = function(initialStatus) {
     this.aggregator.startWith = initialStatus
     return this
   }
 
-  EventStream.prototype.when = function(howToProcessEvents) {
+  LevelWHEN.prototype.when = function(howToProcessEvents) {
     this.aggregator.howToProcessEvents = howToProcessEvents
     return this
   }
 
-  EventStream.prototype.pullFrom = function(sourcePath) {
+  LevelWHEN.prototype.pullFrom = function(sourcePath) {
     this.sourcePath = sourcePath
     return this
   }
 
-  EventStream.prototype.run = function() {
+  LevelWHEN.prototype.run = function() {
     var aggregator = this.aggregator,
         sourcePath = this.sourcePath,
         dbPath = this.dbPath
@@ -95,11 +95,11 @@ var EventStream = (function(EventStream) {
     }
   }
 
-  return EventStream
+  return LevelWHEN
 
 })({})
 
 
 module.exports = function(dbPath) {
-  return new EventStream(dbPath)
+  return new LevelWHEN(dbPath)
 }
