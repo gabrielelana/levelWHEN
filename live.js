@@ -2,9 +2,10 @@ var Readable = require('stream').Readable,
     levelup = require('levelup'),
     async = require('async'),
     through2 = require('through2'),
-    path = '.db/subscriptions',
-    startingAt = 'ts-0',
-    endingAt = 'ts~'
+    slow = require('./lib/slow-stream'),
+    inspect = require('./lib/inspect-stream'),
+    sink = require('./lib/sink-stream')
+
 
 var es = function(path) {
 
@@ -52,22 +53,20 @@ var es = function(path) {
   return rs
 }
 
-// es('.db/subscriptions').pipe(process.stdout)
 
-var consumed = 0
+
 es('.db/subscriptions')
-  .pipe(
-    through2(function(data, enc, next) {
-      var self = this
-      setTimeout(function() {
-        console.log('consumed %d', ++consumed)
-        self.push(data)
-        next()
-      }, 50)
-    })
-  )
-  .pipe(
-    through2(function(data, enc, next) {
-      next()
-    })
-  )
+  .pipe(slow(50))
+  // .pipe(inspect(function(_data) {
+  //   process.stdout.write('.')
+  // }))
+  .pipe(inspect(
+    (function() {
+      var counter = 0
+      return function(_data) {
+        console.log('consumed %d', ++counter)
+      }
+    })()
+  ))
+  .pipe(sink())
+
