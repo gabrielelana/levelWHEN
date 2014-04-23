@@ -1,6 +1,8 @@
 var levelup = require('levelup'),
     ts = require('monotonic-timestamp'),
-    async = require('async'),
+    es = require('./lib/event-stream'),
+    sink = require('./lib/sink-stream'),
+    through2 = require('through2'),
     _ = require('lodash')
 
 var LevelWHEN = (function(LevelWHEN) {
@@ -43,40 +45,16 @@ var LevelWHEN = (function(LevelWHEN) {
         dbPath = this.dbPath
 
     open(dbPath, function(err, db) {
-      open(sourcePath, function(err, source) {
-        var startingAt = 'ts-0',
-            endingAt = 'ts~'
-
-        async.forever(
-          function(next) {
-            var isActive = false
-            console.log('Fetch %d events starting at %s', 100, startingAt)
-            source.createReadStream({start: startingAt, end: endingAt, limit: 100})
-              .on('data', function(data) {
-                isActive = true
-                source.get(['id', data.value].join('-'), function(err, value) {
-                  // TODO: keep startingAt stored in metadata
-                  startingAt = data.key + '+'
-                  process(value, aggregator, function(err, key, value) {
-                    // console.log(key, value)
-                    db.put(key, value)
-                  })
-                })
-              })
-              .on('close', function() {
-                setTimeout(next, isActive ? 0 : 1000)
-              })
-          },
-          function(err) {
-            console.error(err)
-          }
-        )
-      })
+      es(sourcePath)
+        .pipe(through2({objectMode: true}, function(data, _encoding, next) {
+          process(JSON.parse(data), aggregator, function(err, key, value) {
+            console.log(key, value)
+            this.push({key: key, value: value})
+          }.bind(this))
+          next()
+        }))
+        .pipe(db.createWriteStream())
     })
-  }
-
-  function open(path, cb) {
-    levelup(path, {createIfMissing: true, encoding: {encode: JSON.stringify, decode: JSON.parse}}, cb)
   }
 
   function process(value, aggregator, cb) {
@@ -93,6 +71,10 @@ var LevelWHEN = (function(LevelWHEN) {
         )
       cb(null, index, aggregator.partialStatusOfAllAggregates[index])
     }
+  }
+
+  function open(path, cb) {
+    levelup(path, {createIfMissing: true, encoding: {encode: JSON.stringify, decode: JSON.parse}}, cb)
   }
 
   return LevelWHEN
