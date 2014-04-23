@@ -48,7 +48,7 @@ var LevelWHEN = (function(LevelWHEN) {
       es(sourcePath)
         .pipe(through2({objectMode: true}, function(data, _encoding, next) {
           process(JSON.parse(data), aggregator, function(err, key, value) {
-            console.log(key, value)
+            // console.log(key, value)
             this.push({key: key, value: value})
           }.bind(this))
           next()
@@ -67,7 +67,7 @@ var LevelWHEN = (function(LevelWHEN) {
       // TODO: select aggregation logic based on event name
       aggregator.partialStatusOfAllAggregates[index] =
         aggregator.howToProcessEvents['$any'](
-          aggregator.partialStatusOfAllAggregates[index], value['data']
+          _.clone(aggregator.partialStatusOfAllAggregates[index]), value['data']
         )
       cb(null, index, aggregator.partialStatusOfAllAggregates[index])
     }

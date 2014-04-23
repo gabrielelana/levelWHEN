@@ -16,7 +16,7 @@ rimraf('.db/subscriptions', function(err) {
           return console.error(err)
         }
 
-        fixtures.collection('subscriptions').find({}).each(function(err, doc) {
+        fixtures.collection('subscriptions').find({}).sort({'created_at': 1}).each(function(err, doc) {
           if (doc) {
             var id = doc['_id'],
                 name = doc['type'],
@@ -27,6 +27,7 @@ rimraf('.db/subscriptions', function(err) {
               'name': name,
               'at': at,
               'data': {
+                'type': name,
                 'subscription_id': doc['subscription_id'],
                 'service_id': doc['service_id'],
                 'starting_state': doc['starting_state'],
