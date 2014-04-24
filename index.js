@@ -54,7 +54,7 @@ var LevelWHEN = (function(LevelWHEN) {
 
     es(sourcePath)
       .pipe(through2({objectMode: true}, function(data, _encoding, next) {
-        folding.fold(JSON.parse(data))
+        folding.fold(JSON.parse(data), self)
         next()
       }))
   }

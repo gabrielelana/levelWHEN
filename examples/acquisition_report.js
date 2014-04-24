@@ -8,9 +8,10 @@ rimraf('.db/acquisition_report', function(err) {
     .indexWith('subscription_id')
     .startWith({})
     .when({
-      '$any': function(s, e) {
+      '$any': function(s, e, k, lw) {
         var beforeStatus = s['status']
-        if ((e['type'] === 'subscription-activation-requested') && !s['status']) {
+
+        if ((e['$name'] === 'subscription-activation-requested') && !s['status']) {
           s['first_attempt_at'] = e['created_at']
           s['subscription_id'] = e['subscription_id']
           s['service_id'] = e['service_id']
@@ -24,14 +25,14 @@ rimraf('.db/acquisition_report', function(err) {
               moment(e['created_at']).zone('+02:00').format('YYYYMMDD')
 
           if (s['status'] === 'new') {
-            if (e['type'] === 'subscription-activation-succeeded') {
+            if (e['$name'] === 'subscription-activation-succeeded') {
               if (todayWasFirstAttempt) {
                 s['status'] = 'new billed'
                 s['acquired_at'] = e['created_at']
               } else {
                 s['status'] = 'billed'
               }
-            } else if (e['type'] === 'subscription-activation-failed') {
+            } else if (e['$name'] === 'subscription-activation-failed') {
               if (todayWasFirstAttempt) {
                 s['status'] = 'new never billed'
                 s['acquired_at'] = e['created_at']
@@ -41,7 +42,7 @@ rimraf('.db/acquisition_report', function(err) {
             }
           }
 
-          if (e['type'] === 'subscription-activation-recovered') {
+          if (e['$name'] === 'subscription-activation-recovered') {
             if ((s['status'] === 'new') || (s['status'] === 'new never billed')) {
               if (todayWasFirstAttempt) {
                 s['status'] = 'new billed'
@@ -54,7 +55,7 @@ rimraf('.db/acquisition_report', function(err) {
             }
           }
 
-          if (e['type'] === 'subscription-terminated') {
+          if (e['$name'] === 'subscription-terminated') {
             var todayWasAcquired =
               s['acquired_at'] && (
                 moment(s['acquired_at']).zone('+02:00').format('YYYYMMDD') ===
@@ -64,16 +65,25 @@ rimraf('.db/acquisition_report', function(err) {
           }
         }
 
-        if ((s['status'] !== beforeStatus) && (e['subscription_id'] === '52d854086e73c3e01400129a')) {
-          // TODO: here we should emit the event
-          console.log(
-            moment(e['created_at']).zone('+02:00').format('YYYYMMDD'),
-            s['subscription_id'],
-            e['type'],
-            s['status'],
-            s['churn']
+        if (s['status'] !== beforeStatus) {
+          lw.emit(
+            {
+              '$id': e['$id'],
+              '$source': 'acquisition-report',
+              'status': s['status'],
+              'instant_churn': s['churn'],
+              'subscription_id': s['subscription_id'],
+              'service_id': s['subscription_id'],
+              'operator': s['operator'],
+              'msisdn': s['msisdn'],
+              'at': e['created_at'],
+            },
+            moment(e['created_at']).toDate().getTime(),
+            'ar'
           )
         }
+
+        process.stdout.write('.')
         return s
       }
     })
