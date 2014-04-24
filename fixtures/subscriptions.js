@@ -19,6 +19,7 @@ rimraf('.db/subscriptions', function(err) {
         '$name': doc['type'],
         '$source': 'subscription-engine',
         '$at': Date.parse(doc['created_at']),
+        'created_at': doc['created_at'],
         'subscription_id': doc['subscription_id'],
         'service_id': doc['service_id'],
         'operator': doc['operator'],
