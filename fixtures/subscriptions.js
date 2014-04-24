@@ -1,6 +1,9 @@
 var mongodb = require('mongodb'),
     rimraf = require('rimraf'),
-    levelWHEN = require('./')
+    levelWHEN = require('../')
+
+// !!! This will work with fixture local to my dev machine
+// !!! More general fixtures with related examples will be available soon
 
 rimraf('.db/subscriptions', function(err) {
   var lw = levelWHEN('.db/subscriptions')
