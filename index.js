@@ -7,8 +7,8 @@ var levelup = require('levelup'),
 
 var LevelWHEN = (function(LevelWHEN) {
 
-  LevelWHEN = function(dbPath) {
-    this.dbPath = dbPath
+  LevelWHEN = function(path) {
+    this.db = levelup(path, {createIfMissing: true, encoding: {encode: JSON.stringify, decode: JSON.parse}})
     this.aggregator = {
       partialStatusOfAllAggregates: {}
     }
@@ -39,22 +39,30 @@ var LevelWHEN = (function(LevelWHEN) {
     return this
   }
 
+  LevelWHEN.prototype.emit = function(event, at, ns) {
+    var eventToUseAsSource = {type: 'put', key: '$ts-' + ts(), value: event},
+        eventsToStore = [eventToUseAsSource]
+
+    if (at && ns) {
+      eventsToStore.push({type: 'put', key: ns + '-' + at, value: event})
+    }
+    this.db.batch(eventsToStore)
+  }
+
   LevelWHEN.prototype.run = function() {
     var aggregator = this.aggregator,
         sourcePath = this.sourcePath,
-        dbPath = this.dbPath
+        db = this.db
 
-    open(dbPath, function(err, db) {
-      es(sourcePath)
-        .pipe(through2({objectMode: true}, function(data, _encoding, next) {
-          process(JSON.parse(data), aggregator, function(err, key, value) {
-            // console.log(key, value)
-            this.push({key: key, value: value})
-          }.bind(this))
-          next()
-        }))
-        .pipe(db.createWriteStream())
-    })
+    es(sourcePath)
+      .pipe(through2({objectMode: true}, function(data, _encoding, next) {
+        process(JSON.parse(data), aggregator, function(err, key, value) {
+          // console.log(key, value)
+          this.push({key: key, value: value})
+        }.bind(this))
+        next()
+      }))
+      .pipe(db.createWriteStream())
   }
 
   function process(value, aggregator, cb) {
@@ -71,10 +79,6 @@ var LevelWHEN = (function(LevelWHEN) {
         )
       cb(null, index, aggregator.partialStatusOfAllAggregates[index])
     }
-  }
-
-  function open(path, cb) {
-    levelup(path, {createIfMissing: true, encoding: {encode: JSON.stringify, decode: JSON.parse}}, cb)
   }
 
   return LevelWHEN
