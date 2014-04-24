@@ -1,7 +1,7 @@
 var levelup = require('levelup'),
     ts = require('monotonic-timestamp'),
     es = require('./lib/event-stream'),
-    sink = require('./lib/sink-stream'),
+    folding = require('./lib/folding'),
     through2 = require('through2'),
     _ = require('lodash')
 
@@ -9,28 +9,26 @@ var LevelWHEN = (function(LevelWHEN) {
 
   LevelWHEN = function(path) {
     this.db = levelup(path, {createIfMissing: true, encoding: {encode: JSON.stringify, decode: JSON.parse}})
-    this.aggregator = {
-      partialStatusOfAllAggregates: {}
-    }
+    this.folding = folding(this.db)
   }
 
   LevelWHEN.prototype.indexWith = function(keyOrExtractor) {
     if (_.isFunction(keyOrExtractor)) {
-      this.aggregator.indexWith = keyOrExtractor
+      this.folding.indexWith = keyOrExtractor
     }
-    this.aggregator.indexWith = function(event) {
-      return event['data'][keyOrExtractor]
+    this.folding.indexWith = function(event) {
+      return event[keyOrExtractor]
     }
     return this
   }
 
   LevelWHEN.prototype.startWith = function(initialStatus) {
-    this.aggregator.startWith = initialStatus
+    this.folding.startWith = initialStatus
     return this
   }
 
-  LevelWHEN.prototype.when = function(howToProcessEvents) {
-    this.aggregator.howToProcessEvents = howToProcessEvents
+  LevelWHEN.prototype.when = function(howToFoldEvents) {
+    this.folding.howToFoldEvents = howToFoldEvents
     return this
   }
 
@@ -50,35 +48,15 @@ var LevelWHEN = (function(LevelWHEN) {
   }
 
   LevelWHEN.prototype.run = function() {
-    var aggregator = this.aggregator,
+    var folding = this.folding,
         sourcePath = this.sourcePath,
-        db = this.db
+        self = this
 
     es(sourcePath)
       .pipe(through2({objectMode: true}, function(data, _encoding, next) {
-        process(JSON.parse(data), aggregator, function(err, key, value) {
-          // console.log(key, value)
-          this.push({key: key, value: value})
-        }.bind(this))
+        folding.fold(JSON.parse(data))
         next()
       }))
-      .pipe(db.createWriteStream())
-  }
-
-  function process(value, aggregator, cb) {
-    var index = aggregator.indexWith(value)
-    if (index !== undefined) {
-      // TODO: keep partialStatusOfAllAggregates stored somewhere
-      if (aggregator.partialStatusOfAllAggregates[index] === undefined) {
-        aggregator.partialStatusOfAllAggregates[index] = aggregator.startWith
-      }
-      // TODO: select aggregation logic based on event name
-      aggregator.partialStatusOfAllAggregates[index] =
-        aggregator.howToProcessEvents['$any'](
-          _.clone(aggregator.partialStatusOfAllAggregates[index]), value['data']
-        )
-      cb(null, index, aggregator.partialStatusOfAllAggregates[index])
-    }
   }
 
   return LevelWHEN
