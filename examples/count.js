@@ -11,11 +11,12 @@ rimraf('.db/count_events_per_subscription', function(err) {
       '$any': function(s, e, k) {
         return _({count: s.count + 1})
           .tap(function(n) {
-            console.log(k, n)
+            // console.log(k, n)
             return n
           })
           .value()
       }
     })
+    .listenTo(7575)
     .run()
 })

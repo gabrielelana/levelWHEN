@@ -87,5 +87,6 @@ rimraf('.db/acquisition_report', function(err) {
         return s
       }
     })
+    .listenTo(7575)
     .run()
 })

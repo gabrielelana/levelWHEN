@@ -3,6 +3,7 @@ var levelup = require('levelup'),
     lws = require('./lib/lw-stream'),
     folding = require('./lib/folding'),
     through2 = require('through2'),
+    express = require('express'),
     _ = require('lodash')
 
 var LevelWHEN = (function(LevelWHEN) {
@@ -34,7 +35,37 @@ var LevelWHEN = (function(LevelWHEN) {
 
   LevelWHEN.prototype.pullFrom = function(sourcePath, markerKey) {
     this.sourcePath = sourcePath
-    this.markerKey = '$ts-' + markerKey
+    this.markerKey = '$pm-' + markerKey
+    return this
+  }
+
+  LevelWHEN.prototype.listenTo = function(port, defineRoutesOn) {
+    this.listenOnPort = port
+    this.app =
+      express()
+        .set('lw', this)
+        .get('/ping', function(req, res) {
+          res.send('pong')
+        })
+        .get('/e/:start/:limit', function(req, res) {
+          var startingAt = '$ts-' + req.params.start,
+              limit = req.params.limit,
+              endingAt = '$ts~'
+
+          res.writeHead(200, {'Content-Type': 'application/json'})
+          res.write('[')
+          req.app.get('lw').db.createReadStream({start: startingAt, end: endingAt, limit: limit})
+            .on('data', function(data) {
+              res.write(JSON.stringify(data.value))
+              res.write(',')
+            })
+            .on('close', function() {
+              res.end('false]')
+            })
+        })
+    if (defineRoutesOn) {
+      defineRoutesOn(this.app)
+    }
     return this
   }
 
@@ -53,14 +84,23 @@ var LevelWHEN = (function(LevelWHEN) {
         sourcePath = this.sourcePath,
         self = this
 
-    lws(sourcePath, {key: self.markerKey, db: self.db})
-      .pipe(through2({objectMode: true}, function(data, _encoding, next) {
-        folding.fold(JSON.parse(data), self)
-        next()
-      }))
+    listen(self, function() {
+      lws(sourcePath, {key: self.markerKey, db: self.db})
+        .pipe(through2({objectMode: true}, function(data, _encoding, next) {
+          folding.fold(JSON.parse(data), self)
+          next()
+        }))
+    })
   }
 
   return LevelWHEN
+
+  function listen(lw, callback) {
+    if (lw.app && lw.listenOnPort) {
+      return lw.app.listen(lw.listenOnPort, callback)
+    }
+    callback()
+  }
 
 })({})
 
