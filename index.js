@@ -32,8 +32,9 @@ var LevelWHEN = (function(LevelWHEN) {
     return this
   }
 
-  LevelWHEN.prototype.pullFrom = function(sourcePath) {
+  LevelWHEN.prototype.pullFrom = function(sourcePath, markerKey) {
     this.sourcePath = sourcePath
+    this.markerKey = '$ts-' + markerKey
     return this
   }
 
@@ -52,7 +53,7 @@ var LevelWHEN = (function(LevelWHEN) {
         sourcePath = this.sourcePath,
         self = this
 
-    lws(sourcePath)
+    lws(sourcePath, {key: self.markerKey, db: self.db})
       .pipe(through2({objectMode: true}, function(data, _encoding, next) {
         folding.fold(JSON.parse(data), self)
         next()

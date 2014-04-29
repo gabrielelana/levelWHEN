@@ -4,7 +4,7 @@ var rimraf = require('rimraf'),
 
 rimraf('.db/count_events_per_subscription', function(err) {
   levelWHEN('.db/count_events_per_subscription')
-    .pullFrom('.db/subscriptions')
+    .pullFrom('.db/subscriptions', 'subscriptions')
     .indexWith('subscription_id')
     .startWith({count: 0})
     .when({
