@@ -1,6 +1,6 @@
 var levelup = require('levelup'),
     ts = require('monotonic-timestamp'),
-    es = require('./lib/event-stream'),
+    lws = require('./lib/lw-stream'),
     folding = require('./lib/folding'),
     through2 = require('through2'),
     _ = require('lodash')
@@ -52,7 +52,7 @@ var LevelWHEN = (function(LevelWHEN) {
         sourcePath = this.sourcePath,
         self = this
 
-    es(sourcePath)
+    lws(sourcePath)
       .pipe(through2({objectMode: true}, function(data, _encoding, next) {
         folding.fold(JSON.parse(data), self)
         next()
