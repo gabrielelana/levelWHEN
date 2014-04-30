@@ -78,7 +78,7 @@ rimraf('.db/acquisition_report', function(err) {
               'msisdn': s['msisdn'],
               'at': e['created_at'],
             },
-            moment(e['created_at']).toDate().getTime(),
+            moment(e['created_at']).toDate().getTime(), // add subscription_id to the id?
             'ar'
           )
         }
