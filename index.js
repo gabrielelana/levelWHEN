@@ -50,17 +50,21 @@ var LevelWHEN = (function(LevelWHEN) {
         .get('/e/:start/:limit', function(req, res) {
           var startingAt = '$ts-' + req.params.start,
               limit = req.params.limit,
-              endingAt = '$ts~'
+              endingAt = '$ts~',
+              isFirst = true
 
           res.writeHead(200, {'Content-Type': 'application/json'})
           res.write('[')
           req.app.get('lw').db.createReadStream({start: startingAt, end: endingAt, limit: limit})
             .on('data', function(data) {
+              if (!isFirst) {
+                res.write(',')
+              }
               res.write(JSON.stringify(data.value))
-              res.write(',')
+              isFirst = false
             })
             .on('close', function() {
-              res.end('false]')
+              res.end(']')
             })
         })
     if (defineRoutesOn) {
