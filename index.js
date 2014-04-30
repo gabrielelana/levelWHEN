@@ -49,7 +49,7 @@ var LevelWHEN = (function(LevelWHEN) {
         })
         .get('/e/:start/:limit', function(req, res) {
           var startingAt = '$ts-' + req.params.start,
-              limit = req.params.limit,
+              limit = parseInt(req.params.limit, 10),
               endingAt = '$ts~',
               isFirst = true
 
